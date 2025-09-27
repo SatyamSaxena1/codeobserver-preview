@@ -7,7 +7,47 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18.x, 20.x]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: codeobserver-poc/package-lock.json
+
+      - name: Install dependencies
+        working-directory: codeobserver-poc
+        run: npm ci
+
+      - name: Lint
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '20.x'
+        working-directory: codeobserver-poc
+        run: npm run lint
+
+      - name: Run tests (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: codeobserver-poc
+        run: xvfb-run -a npm test
+
+      - name: Run tests (Windows)
+        if: matrix.os == 'windows-latest'
+        working-directory: codeobserver-poc
+        run: npm test
+
+  package-and-sign:
+    name: Package and sign VSIX
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -18,23 +58,62 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: codeobserver-poc/package-lock.json
 
       - name: Install dependencies
         working-directory: codeobserver-poc
         run: npm ci
 
-      - name: Lint
-        working-directory: codeobserver-poc
-        run: npm run lint
-
-      - name: Run tests
-        working-directory: codeobserver-poc
-        run: xvfb-run -a npm test
-
       - name: Package VSIX (smoke test)
+        id: package
         working-directory: codeobserver-poc
+        shell: bash
         run: |
-          rm -f *.vsix
+          set -euo pipefail
+          npx rimraf *.vsix
           npx vsce package --no-dependencies
+          VSIX_FILE=$(ls *.vsix)
+          echo "vsix-file=$VSIX_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Sign VSIX (keyless)
+        id: sign
+        working-directory: codeobserver-poc
+        shell: bash
+        env:
+          COSIGN_YES: "1"
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          VSIX_FILE="${{ steps.package.outputs.vsix-file }}"
+          cosign sign-blob \
+            --output-signature "${VSIX_FILE}.sig" \
+            --output-certificate "${VSIX_FILE}.pem" \
+            "${VSIX_FILE}"
+          echo "signature=${VSIX_FILE}.sig" >> "$GITHUB_OUTPUT"
+          echo "certificate=${VSIX_FILE}.pem" >> "$GITHUB_OUTPUT"
+
+      - name: Verify VSIX signature
+        working-directory: codeobserver-poc
+        shell: bash
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          cosign verify-blob \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@${{ github.ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --signature "${{ steps.sign.outputs.signature }}" \
+            "${{ steps.package.outputs.vsix-file }}"
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-vsix
+          path: |
+            codeobserver-poc/${{ steps.package.outputs.vsix-file }}
+            codeobserver-poc/${{ steps.sign.outputs.signature }}
+            codeobserver-poc/${{ steps.sign.outputs.certificate }}

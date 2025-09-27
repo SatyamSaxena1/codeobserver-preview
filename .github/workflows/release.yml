@@ -32,10 +32,43 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f *.vsix
+          npx rimraf *.vsix
           npx vsce package --no-dependencies
           VSIX_FILE=$(ls *.vsix)
           echo "vsix-file=$VSIX_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Sign VSIX (keyless)
+        id: sign
+        working-directory: codeobserver-poc
+        shell: bash
+        env:
+          COSIGN_YES: "1"
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          VSIX_FILE="${{ steps.build.outputs.vsix-file }}"
+          cosign sign-blob \
+            --output-signature "${VSIX_FILE}.sig" \
+            --output-certificate "${VSIX_FILE}.pem" \
+            "${VSIX_FILE}"
+          echo "signature=${VSIX_FILE}.sig" >> "$GITHUB_OUTPUT"
+          echo "certificate=${VSIX_FILE}.pem" >> "$GITHUB_OUTPUT"
+
+      - name: Verify VSIX signature
+        working-directory: codeobserver-poc
+        shell: bash
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          cosign verify-blob \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --signature "${{ steps.sign.outputs.signature }}" \
+            "${{ steps.build.outputs.vsix-file }}"
 
       - name: Upload VSIX to release
         uses: actions/upload-release-asset@v1
@@ -46,3 +79,23 @@ jobs:
           asset_path: codeobserver-poc/${{ steps.build.outputs.vsix-file }}
           asset_name: ${{ steps.build.outputs.vsix-file }}
           asset_content_type: application/octet-stream
+
+      - name: Upload signature to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: codeobserver-poc/${{ steps.sign.outputs.signature }}
+          asset_name: ${{ steps.sign.outputs.signature }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload certificate to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: codeobserver-poc/${{ steps.sign.outputs.certificate }}
+          asset_name: ${{ steps.sign.outputs.certificate }}
+          asset_content_type: application/x-pem-file

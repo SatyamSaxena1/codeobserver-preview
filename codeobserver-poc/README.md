@@ -48,8 +48,8 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 
 ### Automated Release Workflow
 
-- Pushing commits to `main` triggers the CI workflow in `.github/workflows/ci.yml`, which lints, tests, and performs a smoke packaging run.
-- Creating or publishing a GitHub release (or manually dispatching the "Release" workflow) runs `.github/workflows/release.yml`. This job rebuilds the VSIX from the tagged source and uploads it as a release asset so it can be downloaded without local packaging.
+- Pushing commits to `main` triggers the CI workflow in `.github/workflows/ci.yml`, which now runs linting and tests across a Node.js/OS matrix, performs a Linux smoke package, and produces a cosign-signed VSIX artifact for download.
+- Creating or publishing a GitHub release (or manually dispatching the "Release" workflow) runs `.github/workflows/release.yml`. The job rebuilds the VSIX from the tagged source, signs it using GitHub OIDC with cosign, verifies the signature, and uploads the VSIX + signature + certificate to the release.
 
 To cut a new preview/Maketplace candidate:
 
@@ -107,6 +107,7 @@ codeobserver-poc/
 ## Additional Documentation
 
 - [`docs/lm-studio-integration.md`](docs/lm-studio-integration.md): High-level integration design covering orchestrator responsibilities, data flow, and testing strategy.
+- [`docs/marketplace-listing.md`](docs/marketplace-listing.md): Ready-to-polish Marketplace listing copy, asset checklist, and submission guidance.
 - Persist richer telemetry snapshots across sessions for longitudinal insights.
 - Add visual dashboards (webviews) for deeper exploration of strategic guidance.
 - Introduce team collaboration surfaces backed by shared storage.

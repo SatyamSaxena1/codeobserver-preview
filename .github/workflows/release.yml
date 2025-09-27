@@ -79,6 +79,7 @@ jobs:
           cosign verify-blob \
             --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --certificate "${{ steps.sign.outputs.certificate }}" \
             --signature "${{ steps.sign.outputs.signature }}" \
             "${{ steps.build.outputs.vsix-file }}"
 

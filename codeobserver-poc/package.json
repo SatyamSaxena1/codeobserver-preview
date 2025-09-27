@@ -6,7 +6,7 @@
   "publisher": "codeobserver",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lm-studio-commercial/codeobserver"
+    "url": "https://github.com/SatyamSaxena1/codeobserver-preview"
   },
   "engines": {
     "vscode": "^1.84.0"

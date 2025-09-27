@@ -83,17 +83,20 @@ jobs:
         uses: sigstore/cosign-installer@v3.5.0
 
       - name: Request OIDC token
+        id: oidc_token
         uses: actions/github-script@v7
         with:
           script: |
-            const token = await core.getIDToken('sigstore.dev');
-            core.exportVariable('COSIGN_ID_TOKEN', token);
+            const token = await core.getIDToken('sigstore');
+            core.setSecret(token);
+            core.setOutput('token', token);
 
       - name: Sign VSIX (keyless)
         id: sign
         working-directory: codeobserver-poc
         shell: bash
         env:
+          COSIGN_ID_TOKEN: ${{ steps.oidc_token.outputs.token }}
           COSIGN_YES: "1"
           COSIGN_EXPERIMENTAL: "1"
         run: |

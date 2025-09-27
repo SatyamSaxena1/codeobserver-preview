@@ -1,0 +1,145 @@
+{
+  "name": "codeobserver-poc",
+  "displayName": "CodeObserver Preview",
+  "description": "Preview VS Code extension that blends GitHub Copilot workflows with strategic oversight from a local AI observer.",
+  "version": "0.1.0-preview.1",
+  "publisher": "codeobserver",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lm-studio-commercial/codeobserver"
+  },
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeObserver.showInsights",
+        "title": "CodeObserver: Show Latest Insight"
+      },
+      {
+        "command": "codeObserver.analyzeWorkspace",
+        "title": "CodeObserver: Run Strategic Analysis"
+      },
+      {
+        "command": "codeObserver.showInsightHistory",
+        "title": "CodeObserver: Show Insight History"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CodeObserver",
+      "properties": {
+        "codeObserver.objectives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "Maintain architectural consistency",
+            "Protect critical modules",
+            "Keep codebase aligned with objectives"
+          ],
+          "description": "High-level objectives the strategic observer should monitor."
+        },
+        "codeObserver.analysisCooldown": {
+          "type": "number",
+          "default": 90,
+          "minimum": 30,
+          "markdownDescription": "Minimum seconds between automatic analysis runs triggered by activity."
+        },
+        "codeObserver.lmStudio.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable LM Studio CLI integration for strategic analysis."
+        },
+        "codeObserver.lmStudio.cliPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to the LM Studio CLI executable (e.g. `D:/LMstudio/LM Studio/resources/app/.webpack/lms.exe`)."
+        },
+        "codeObserver.lmStudio.model": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Name of the LM Studio model to load (e.g. `ggml-v3-code`)."
+        },
+        "codeObserver.lmStudio.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional custom system prompt for LM Studio analysis. Leave blank to use the built-in prompt."
+        },
+        "codeObserver.lmStudio.timeoutMs": {
+          "type": "number",
+          "default": 45000,
+          "minimum": 5000,
+          "markdownDescription": "Timeout in milliseconds for LM Studio CLI interactions."
+        },
+        "codeObserver.lmStudio.ttlSeconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 0,
+          "markdownDescription": "Seconds to keep LM Studio sessions warm before reloading the model."
+        },
+        "codeObserver.lmStudio.preloadModel": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Load the configured model as soon as the extension activates instead of waiting for the first request."
+        },
+        "codeObserver.lmStudio.host": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional custom host for LM Studio's HTTP bridge. Leave blank for default."
+        },
+        "codeObserver.lmStudio.port": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "Optional custom port for LM Studio's HTTP bridge. Zero means use the default."
+        },
+        "codeObserver.lmStudio.offline": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Whether LM Studio CLI should run in offline mode (no network access)."
+        },
+        "codeObserver.verboseLogging": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "If true, log every captured activity event to the CodeObserver output channel. Disable to reduce noise."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "clean": "rimraf dist",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile",
+    "test": "node ./dist/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.84.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@vscode/test-electron": "^2.3.5",
+    "eslint": "^8.57.0",
+    "glob": "^10.3.12",
+    "mocha": "^10.4.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
+  }
+}

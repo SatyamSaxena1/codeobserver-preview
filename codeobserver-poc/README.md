@@ -33,7 +33,7 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 
 ### Manual Preview Installation
 
-1. Download the latest `codeobserver-preview-0.1.0-preview.1.vsix` package from the GitHub release page.
+1. Download the latest `codeobserver-poc-<version>.vsix` package from the GitHub release page (each release automatically includes the VSIX asset).
 2. In VS Code, open the command palette and run `Extensions: Install from VSIX...`.
 3. Select the downloaded file and reload the window when prompted.
 4. Verify the status bar indicator appears and open the **CodeObserver** output channel for diagnostics.
@@ -45,6 +45,19 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 - **Objectives**: High-level goals that guide synthesized insights.
 - **Analysis Cooldown**: Minimum seconds between automatic analyses triggered by new activity.
 - **LM Studio**: Enable the local CLI, point to the executable, choose a model, and optionally override timeout, warm TTL, system prompt, offline mode, and host/port settings.
+
+### Automated Release Workflow
+
+- Pushing commits to `main` triggers the CI workflow in `.github/workflows/ci.yml`, which lints, tests, and performs a smoke packaging run.
+- Creating or publishing a GitHub release (or manually dispatching the "Release" workflow) runs `.github/workflows/release.yml`. This job rebuilds the VSIX from the tagged source and uploads it as a release asset so it can be downloaded without local packaging.
+
+To cut a new preview/Maketplace candidate:
+
+1. Bump the version in `package.json` and update `CHANGELOG.md`.
+2. Commit the changes and create an annotated tag that matches the version (`git tag -a vX.Y.Z -m "CodeObserver Preview X.Y.Z"`).
+3. Push the branch and tag (`git push && git push origin vX.Y.Z`).
+4. Draft or publish a GitHub release for that tag—once the release is published the workflow uploads the VSIX artifact automatically.
+5. Download the attached VSIX for Marketplace submission or manual distribution.
 
 ### LM Studio Integration
 

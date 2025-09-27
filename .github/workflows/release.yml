@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  package-and-upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: codeobserver-poc/package-lock.json
+
+      - name: Install dependencies
+        working-directory: codeobserver-poc
+        run: npm ci
+
+      - name: Build VSIX
+        id: build
+        working-directory: codeobserver-poc
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f *.vsix
+          npx vsce package --no-dependencies
+          VSIX_FILE=$(ls *.vsix)
+          echo "vsix-file=$VSIX_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload VSIX to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: codeobserver-poc/${{ steps.build.outputs.vsix-file }}
+          asset_name: ${{ steps.build.outputs.vsix-file }}
+          asset_content_type: application/octet-stream

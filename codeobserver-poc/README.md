@@ -7,6 +7,8 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 - **Ambient monitoring** of document opens, edits, saves, selections, and Copilot command usage (when the API is available).
 - **Strategic insight generation** via a modular analysis orchestrator that prefers any LM Studio model you configure while preserving an automatic deterministic fallback when offline.
 - **Insight surfacing** with a status bar indicator, quick history browsing, and on-demand notifications.
+- **Historical visibility** via an insights dashboard webview, quick export, and one-click clearing of stale guidance.
+- **Session persistence** that restores prior insights when you reopen the workspace, so strategic guidance survives restarts.
 - **Configuration hooks** for custom objectives and analysis cool-down windows.
 - **Foundational tests** to ensure extension activation and command registration.
 
@@ -31,6 +33,7 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
    - Run `CodeObserver: Run Strategic Analysis` from the command palette for a manual insight.
    - Click the status bar item or run `CodeObserver: Show Latest Insight` to view results.
    - Browse previous results with `CodeObserver: Show Insight History`.
+   - Open the persistent dashboard with `CodeObserver: Open Insights Dashboard` to review summaries, filter by source, export as JSON, or clear history.
 
 ### Manual Preview Installation
 
@@ -46,6 +49,7 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 - **Objectives**: High-level goals that guide synthesized insights.
 - **Analysis Cooldown**: Minimum seconds between automatic analyses triggered by new activity.
 - **LM Studio**: Enable the local CLI, point to the executable, select a model (via `CodeObserver: Select LM Studio Model`), and optionally override timeout, warm TTL, system prompt, offline mode, and host/port settings.
+- **Insight Management**: Use `CodeObserver: Open Insights Dashboard` for a visual timeline, `CodeObserver: Export Insight History` to open a JSON snapshot, and `CodeObserver: Clear Insight History` to reset the persisted cache (confirmation required).
 
 ### Automated Release Workflow
 
@@ -86,7 +90,8 @@ codeobserver-poc/
 │   ├── analyzers/
 │   │   ├── heuristicAnalyzer.ts # Deterministic fallback insight generator
 │   │   └── lmStudioAnalyzer.ts  # Harmony prompt + LM Studio response interpreter
-│   ├── insightStore.ts         # In-memory storage for latest insights and history
+│   ├── insightStore.ts         # Insight cache with workspace persistence support
+│   ├── insightsDashboard.ts    # Webview panel for browsing and managing persisted insights
 │   ├── extension.ts            # Activation entry point wiring everything together
 │   └── test/                   # Mocha-based smoke tests
 ├── dist/                       # TypeScript compilation output
@@ -109,7 +114,7 @@ codeobserver-poc/
 
 - [`docs/lm-studio-integration.md`](docs/lm-studio-integration.md): High-level integration design covering orchestrator responsibilities, data flow, and testing strategy.
 - [`docs/marketplace-listing.md`](docs/marketplace-listing.md): Ready-to-polish Marketplace listing copy, asset checklist, and submission guidance.
-- Persist richer telemetry snapshots across sessions for longitudinal insights.
+- Capture richer telemetry snapshots (beyond insight summaries) across sessions for deeper trend analysis.
 - Add visual dashboards (webviews) for deeper exploration of strategic guidance.
 - Introduce team collaboration surfaces backed by shared storage.
 

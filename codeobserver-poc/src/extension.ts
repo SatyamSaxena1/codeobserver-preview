@@ -5,6 +5,7 @@ import { LmStudioClient } from './lmStudioClient';
 import { listDownloadedModels, LmStudioCliError } from './lmStudioCli';
 import { InsightStore } from './insightStore';
 import { ActivityEvent, StrategicInsight } from './types';
+import { InsightsDashboard } from './insightsDashboard';
 
 const STATUS_IDLE = 'CodeObserver $(pulse)';
 const DEFAULT_OBJECTIVES = [
@@ -80,7 +81,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     objectives,
     logger: (message) => output.appendLine(`[Analysis] ${message}`),
   });
-  const insightStore = new InsightStore();
+  const insightStore = new InsightStore({ storage: context.workspaceState });
+  const restoredInsights = insightStore.getHistoryCount();
+  if (restoredInsights > 0) {
+    output.appendLine(`Restored ${restoredInsights} CodeObserver insight${restoredInsights === 1 ? '' : 's'} from previous sessions.`);
+  }
+  const insightsDashboard = new InsightsDashboard(insightStore);
   const monitoredActivity: ActivityEvent[] = [];
   let lastAnalysisTimestamp = 0;
 
@@ -354,6 +360,44 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await vscode.window.showInformationMessage(
         `LM Studio model set to ${selectedModel}.`,
       );
+    }),
+    vscode.commands.registerCommand('codeObserver.clearInsightHistory', async () => {
+      if (insightStore.getHistoryCount() === 0) {
+        await vscode.window.showInformationMessage('CodeObserver has no persisted insights to clear.');
+        return;
+      }
+
+      const confirmation = await vscode.window.showWarningMessage(
+        'Clear all CodeObserver insights stored for this workspace? This action cannot be undone.',
+        { modal: true },
+        'Clear insights',
+      );
+      if (confirmation !== 'Clear insights') {
+        return;
+      }
+
+      await insightStore.clearHistory();
+      output.appendLine('Persisted insights cleared on user request.');
+      await vscode.window.showInformationMessage('CodeObserver insight history has been cleared.');
+    }),
+    vscode.commands.registerCommand('codeObserver.exportInsightHistory', async () => {
+      if (insightStore.getHistoryCount() === 0) {
+        await vscode.window.showInformationMessage('CodeObserver has no insights to export.');
+        return;
+      }
+
+      const snapshot = insightStore.getExportSnapshot();
+      const document = await vscode.workspace.openTextDocument({
+        content: JSON.stringify(snapshot, null, 2),
+        language: 'json',
+      });
+      await vscode.window.showTextDocument(document, { preview: false });
+      output.appendLine(
+        `Opened exported insight snapshot with ${snapshot.insightCount} insight${snapshot.insightCount === 1 ? '' : 's'}.`,
+      );
+    }),
+    vscode.commands.registerCommand('codeObserver.showInsightsDashboard', () => {
+      insightsDashboard.show();
     }),
     vscode.commands.registerCommand('codeObserver.showInsights', async () => {
       const latest = insightStore.getLatest();

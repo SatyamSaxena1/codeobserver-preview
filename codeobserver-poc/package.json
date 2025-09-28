@@ -39,6 +39,18 @@
       {
         "command": "codeObserver.configureLmStudioModel",
         "title": "CodeObserver: Select LM Studio Model"
+      },
+      {
+        "command": "codeObserver.clearInsightHistory",
+        "title": "CodeObserver: Clear Insight History"
+      },
+      {
+        "command": "codeObserver.exportInsightHistory",
+        "title": "CodeObserver: Export Insight History"
+      },
+      {
+        "command": "codeObserver.showInsightsDashboard",
+        "title": "CodeObserver: Open Insights Dashboard"
       }
     ],
     "configuration": {

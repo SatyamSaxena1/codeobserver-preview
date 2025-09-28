@@ -48,6 +48,10 @@ ActivityMonitor ──▶ AnalysisOrchestrator ──▶ { LmStudioAnalysisEngin
 4. When disabled:
    - Disposes existing LM Studio client (best-effort) and reverts to fallback only.
 
+### User Workflow Enhancements
+- Extension activation is now command-driven (`CodeObserver: Activate`), preventing background monitoring until the user explicitly opts in for the current window.
+- `CodeObserver: Select LM Studio Model` queries LM Studio for downloaded models (fallbacks to manual entry) and writes the chosen identifier into workspace settings, avoiding hard-coded GPT-OSS defaults.
+
 ## Data Contracts
 
 ```ts

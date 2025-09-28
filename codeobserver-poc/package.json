@@ -14,12 +14,13 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "codeObserver.activate",
+        "title": "CodeObserver: Activate (Start Monitoring)"
+      },
       {
         "command": "codeObserver.showInsights",
         "title": "CodeObserver: Show Latest Insight"
@@ -31,6 +32,10 @@
       {
         "command": "codeObserver.showInsightHistory",
         "title": "CodeObserver: Show Insight History"
+      },
+      {
+        "command": "codeObserver.configureLmStudioModel",
+        "title": "CodeObserver: Select LM Studio Model"
       }
     ],
     "configuration": {

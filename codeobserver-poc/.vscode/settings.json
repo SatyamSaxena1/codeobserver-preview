@@ -1,7 +1,7 @@
 {
-  "codeObserver.lmStudio.enabled": true,
+  "codeObserver.lmStudio.enabled": false,
   "codeObserver.lmStudio.cliPath": "D:/LMstudio/LM Studio/resources/app/.webpack/lms.exe",
-  "codeObserver.lmStudio.model": "openai/gpt-oss-20b",
+  "codeObserver.lmStudio.model": "",
   "codeObserver.lmStudio.offline": true,
-  "codeObserver.lmStudio.preloadModel": true
+  "codeObserver.lmStudio.preloadModel": false
 }

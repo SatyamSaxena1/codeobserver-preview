@@ -5,7 +5,7 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 ## Key Capabilities
 
 - **Ambient monitoring** of document opens, edits, saves, selections, and Copilot command usage (when the API is available).
-- **Strategic insight generation** via a modular analysis orchestrator that prefers LM Studio's GPT-OSS models when available while preserving an automatic deterministic fallback when offline.
+- **Strategic insight generation** via a modular analysis orchestrator that prefers any LM Studio model you configure while preserving an automatic deterministic fallback when offline.
 - **Insight surfacing** with a status bar indicator, quick history browsing, and on-demand notifications.
 - **Configuration hooks** for custom objectives and analysis cool-down windows.
 - **Foundational tests** to ensure extension activation and command registration.
@@ -26,7 +26,8 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
    ```
    Then press <kbd>F5</kbd> in VS Code to start a new Extension Development Host session.
 4. Trigger insights:
-   - Save files or execute Copilot commands to generate automatic analyses (subject to cool-down).
+   - Run `CodeObserver: Activate (Start Monitoring)` from the command palette to initialize the observer for the current window.
+   - After activation, save files or execute Copilot commands to generate automatic analyses (subject to cool-down).
    - Run `CodeObserver: Run Strategic Analysis` from the command palette for a manual insight.
    - Click the status bar item or run `CodeObserver: Show Latest Insight` to view results.
    - Browse previous results with `CodeObserver: Show Insight History`.
@@ -44,7 +45,7 @@ A proof-of-concept Visual Studio Code extension that keeps your GitHub Copilot w
 
 - **Objectives**: High-level goals that guide synthesized insights.
 - **Analysis Cooldown**: Minimum seconds between automatic analyses triggered by new activity.
-- **LM Studio**: Enable the local CLI, point to the executable, choose a model, and optionally override timeout, warm TTL, system prompt, offline mode, and host/port settings.
+- **LM Studio**: Enable the local CLI, point to the executable, select a model (via `CodeObserver: Select LM Studio Model`), and optionally override timeout, warm TTL, system prompt, offline mode, and host/port settings.
 
 ### Automated Release Workflow
 
@@ -62,8 +63,8 @@ To cut a new preview/Maketplace candidate:
 ### LM Studio Integration
 
 1. Install LM Studio and note the absolute path to `lms.exe` (on Windows) or the CLI binary for your platform.
-2. Download the desired GPT-OSS model within LM Studio.
-3. In VS Code settings, enable **CodeObserver › LM Studio › Enabled**, set the **CLI Path**, and provide the **Model** name. Optionally adjust the system prompt and timeouts.
+2. Download the models you plan to use within LM Studio.
+3. In VS Code, set **CodeObserver › LM Studio › CLI Path**, then run `CodeObserver: Select LM Studio Model` to pick from the downloaded list (or enter a custom identifier). Enable **CodeObserver › LM Studio › Enabled** when you're ready.
 4. Trigger an analysis (save a file or run `CodeObserver: Run Strategic Analysis`). The status bar and output channel will confirm whether the real model or the built-in fallback produced the insight.
 
 ### Preview Limitations

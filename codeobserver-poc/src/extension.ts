@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ActivityMonitor } from './activityMonitor';
 import { AnalysisEngine } from './analysisEngine';
 import { LmStudioClient } from './lmStudioClient';
+import { listDownloadedModels, LmStudioCliError } from './lmStudioCli';
 import { InsightStore } from './insightStore';
 import { ActivityEvent, StrategicInsight } from './types';
 
@@ -246,6 +247,88 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('codeObserver.activate', async () => {
+      await vscode.window.showInformationMessage(
+        'CodeObserver is active. Monitoring will continue until this window closes.',
+      );
+    }),
+    vscode.commands.registerCommand('codeObserver.configureLmStudioModel', async () => {
+      const configuration = vscode.workspace.getConfiguration('codeObserver');
+      const cliPath = configuration.get<string>('lmStudio.cliPath')?.trim();
+      if (!cliPath) {
+        await vscode.window.showWarningMessage(
+          'Set "codeObserver.lmStudio.cliPath" before selecting a model.',
+        );
+        return;
+      }
+
+      let selectedModel: string | undefined;
+      try {
+        const models = await listDownloadedModels(cliPath);
+        if (models.length) {
+          const quickPickItems: Array<vscode.QuickPickItem & { modelId?: string; manual?: boolean }> = models.map(
+            (model) => ({
+              label: model.label,
+              description: model.quantization ?? undefined,
+              detail:
+                typeof model.sizeBytes === 'number'
+                  ? `${(model.sizeBytes / (1024 * 1024)).toFixed(0)} MiB`
+                  : undefined,
+              modelId: model.id,
+            }),
+          );
+          quickPickItems.push({
+            label: '$(pencil) Enter model identifier…',
+            description: 'Type a custom LM Studio model id',
+            modelId: undefined,
+            manual: true,
+          });
+
+          const selection = await vscode.window.showQuickPick(quickPickItems, {
+            placeHolder: 'Select the LM Studio model CodeObserver should use',
+            matchOnDescription: true,
+          });
+          if (!selection) {
+            return;
+          }
+          if ((selection as { manual?: boolean }).manual) {
+            selectedModel = await promptForModelId(configuration.get<string>('lmStudio.model'));
+          } else {
+            selectedModel = (selection as { modelId?: string }).modelId ?? undefined;
+          }
+        } else {
+          selectedModel = await promptForModelId(configuration.get<string>('lmStudio.model'));
+        }
+      } catch (error) {
+        if (error instanceof LmStudioCliError) {
+          const action = await vscode.window.showErrorMessage(
+            error.message,
+            'Enter model identifier manually',
+          );
+          if (action !== 'Enter model identifier manually') {
+            return;
+          }
+          selectedModel = await promptForModelId(configuration.get<string>('lmStudio.model'));
+        } else {
+          const message = error instanceof Error ? error.message : String(error);
+          await vscode.window.showErrorMessage(
+            `Unable to query LM Studio models: ${message}. Enter the identifier manually.`,
+          );
+          selectedModel = await promptForModelId(configuration.get<string>('lmStudio.model'));
+        }
+      }
+
+      if (!selectedModel) {
+        return;
+      }
+
+      const target = resolveConfigurationTarget();
+      await configuration.update('lmStudio.model', selectedModel, target);
+      output.appendLine(`LM Studio model set to ${selectedModel} (${targetLabel(target)}).`);
+      await vscode.window.showInformationMessage(
+        `LM Studio model set to ${selectedModel}.`,
+      );
+    }),
     vscode.commands.registerCommand('codeObserver.showInsights', async () => {
       const latest = insightStore.getLatest();
       if (!latest) {
@@ -319,4 +402,34 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export function deactivate(): void {
   // Nothing to clean up. VS Code disposables handle lifecycle.
+}
+
+async function promptForModelId(current?: string): Promise<string | undefined> {
+  return vscode.window.showInputBox({
+    prompt: 'Enter the LM Studio model identifier (e.g. openai/gpt-oss-7b)',
+    placeHolder: 'provider/model[:variant]',
+    value: current?.trim(),
+    validateInput: (value) =>
+      value.trim() ? undefined : 'Model identifier must not be empty.',
+  }).then((value) => value?.trim() || undefined);
+}
+
+function resolveConfigurationTarget(): vscode.ConfigurationTarget {
+  if (vscode.workspace.workspaceFolders?.length) {
+    return vscode.ConfigurationTarget.Workspace;
+  }
+  return vscode.ConfigurationTarget.Global;
+}
+
+function targetLabel(target: vscode.ConfigurationTarget): string {
+  switch (target) {
+    case vscode.ConfigurationTarget.Workspace:
+      return 'workspace setting';
+    case vscode.ConfigurationTarget.Global:
+      return 'user setting';
+    case vscode.ConfigurationTarget.WorkspaceFolder:
+      return 'workspace-folder setting';
+    default:
+      return 'setting';
+  }
 }

@@ -18,7 +18,7 @@ CodeObserver turns your editor into a strategic command center by blending GitHu
 - **Insight Dashboard:** Hoverable summary with quick actions to open related files or run a full workspace sweep.
 - **Workspace Analyzer:** Invoke `CodeObserver: Run Strategic Analysis` to score your project against customizable objectives (architecture consistency, critical module drift, mission alignment).
 - **Live Objectives:** Configure `codeObserver.objectives` to align the AI observer with your product OKRs.
-- **LM Studio Bridge:** Point `codeObserver.lmStudio.*` settings at a local GPT-OSS-20B deployment for air-gapped inference.
+- **LM Studio Bridge:** Point `codeObserver.lmStudio.*` settings at any local LM Studio deployment for air-gapped inference and pick the model via the `CodeObserver: Select LM Studio Model` command.
 - **Verbose Telemetry:** Enable `codeObserver.verboseLogging` when you need to audit every decision.
 
 ## Installation
@@ -35,9 +35,9 @@ CodeObserver turns your editor into a strategic command center by blending GitHu
     "Protect critical modules",
     "Keep codebase aligned with objectives"
   ],
-  "codeObserver.lmStudio.enabled": true,
+  "codeObserver.lmStudio.enabled": false,
   "codeObserver.lmStudio.cliPath": "C:/LMStudio/lms.exe",
-  "codeObserver.lmStudio.model": "gpt-oss-20b",
+  "codeObserver.lmStudio.model": "",
   "codeObserver.verboseLogging": false
 }
 ```

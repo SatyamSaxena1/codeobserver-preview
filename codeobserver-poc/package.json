@@ -14,6 +14,9 @@
   "categories": [
     "Other"
   ],
+  "activationEvents": [
+    "onCommand:codeObserver.activate"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [

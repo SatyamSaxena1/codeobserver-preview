@@ -50,11 +50,21 @@ const areLmStudioSettingsEqual = (
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const output = vscode.window.createOutputChannel('CodeObserver');
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
-  statusBarItem.text = STATUS_IDLE;
-  statusBarItem.tooltip = 'CodeObserver POC is monitoring your workspace.';
-  statusBarItem.command = 'codeObserver.showInsights';
+  let monitoringStarted = false;
+
+  const updateStatusIdle = () => {
+    statusBarItem.text = STATUS_IDLE;
+    statusBarItem.tooltip = monitoringStarted
+      ? 'CodeObserver POC is monitoring your workspace.'
+      : 'Run "CodeObserver: Activate (Start Monitoring)" to begin monitoring this workspace.';
+    statusBarItem.command = monitoringStarted
+      ? 'codeObserver.showInsights'
+      : 'codeObserver.activate';
+  };
+
+  updateStatusIdle();
   statusBarItem.show();
-  output.appendLine('CodeObserver POC activated. Monitoring workspace events.');
+  output.appendLine('CodeObserver POC loaded. Monitoring is paused until you activate it.');
 
   context.subscriptions.push(output, statusBarItem);
 
@@ -64,6 +74,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   let lmStudioActive = false;
   let lastLmStudioSettings: LmStudioSettingsSnapshot | undefined;
   let verboseLogging = false;
+  let activityMonitor: ActivityMonitor | undefined;
 
   const analysisEngine = new AnalysisEngine({
     objectives,
@@ -171,6 +182,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const updateStatusWithInsight = (summary: string, confidence: number) => {
     statusBarItem.text = `CodeObserver $(lightbulb) ${Math.round(confidence * 100)}%`;
     statusBarItem.tooltip = summary;
+    statusBarItem.command = 'codeObserver.showInsights';
   };
 
   const triggerAnalysis = async (reason: string) => {
@@ -218,7 +230,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   };
 
-  const activityMonitor = new ActivityMonitor((activity) => {
+  const handleActivity = (activity: ActivityEvent) => {
     monitoredActivity.push(activity);
     if (monitoredActivity.length > 100) {
       monitoredActivity.shift();
@@ -232,10 +244,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (activity.kind === 'documentSave') {
       void triggerAnalysis('autosave');
     }
-  });
+  };
 
-  activityMonitor.start();
-  context.subscriptions.push(activityMonitor);
+  const startMonitoring = async (): Promise<void> => {
+    if (monitoringStarted) {
+      await vscode.window.showInformationMessage(
+        'CodeObserver is already monitoring this window.',
+      );
+      return;
+    }
+
+    activityMonitor = new ActivityMonitor(handleActivity);
+    activityMonitor.start();
+    context.subscriptions.push(activityMonitor);
+    monitoringStarted = true;
+    updateStatusIdle();
+    output.appendLine('CodeObserver monitoring started.');
+    await vscode.window.showInformationMessage(
+      'CodeObserver is active. Monitoring will continue until this window closes.',
+    );
+  };
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event: vscode.ConfigurationChangeEvent) => {
@@ -248,9 +276,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('codeObserver.activate', async () => {
-      await vscode.window.showInformationMessage(
-        'CodeObserver is active. Monitoring will continue until this window closes.',
-      );
+      await startMonitoring();
     }),
     vscode.commands.registerCommand('codeObserver.configureLmStudioModel', async () => {
       const configuration = vscode.workspace.getConfiguration('codeObserver');

@@ -2,6 +2,19 @@
 
 All notable changes to CodeObserver will be documented in this file. This project uses [Semantic Versioning](https://semver.org/) and timestamps follow ISO 8601.
 
+## [0.1.1] - 2025-09-29
+### Added
+- Manual activation command (`CodeObserver: Activate`) that defers monitoring until requested and updates the status bar guidance.
+- LM Studio model picker command that queries installed models via the CLI helper and writes the selection to workspace settings.
+
+### Changed
+- Extension manifest now declares the activation event explicitly while keeping monitoring opt-in.
+- Documentation refreshed to reflect manual activation workflow and customizable LM Studio defaults.
+- Activity monitor wiring now initializes lazily, reducing background work when the extension loads.
+
+### Fixed
+- Resolved packaging validation complaints about missing `activationEvents` after switching to command-based activation.
+
 ## [0.1.0] - 2025-09-27
 ### Added
 - Automated GitHub Actions release workflow that builds and uploads VSIX assets when a release is published.

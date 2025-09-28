@@ -2,7 +2,7 @@
   "name": "codeobserver-poc",
   "displayName": "CodeObserver Preview",
   "description": "Preview VS Code extension that blends GitHub Copilot workflows with strategic oversight from a local AI observer.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "codeobserver",
   "repository": {
     "type": "git",
